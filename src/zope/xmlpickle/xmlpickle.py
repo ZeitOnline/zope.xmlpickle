@@ -16,8 +16,14 @@
 """
 
 from xml.parsers import expat
-from cStringIO import StringIO
-from cPickle import loads as _standard_pickle_loads
+try:
+    from cStringIO import StringIO
+    from cPickle import loads as _standard_pickle_loads
+    from pickle import Pickler
+except ImportError:
+    from io import BytesIO as StringIO
+    from pickle import loads as _standard_pickle_loads
+    from pickle import _Pickler as Pickler
 from pickle import \
      MARK as _MARK, \
      EMPTY_DICT as _EMPTY_DICT, \
@@ -25,13 +31,12 @@ from pickle import \
      SETITEM as _SETITEM, \
      SETITEMS as _SETITEMS
 from zope.xmlpickle import ppml
-import pickle
 
 
-class _PicklerThatSortsDictItems(pickle.Pickler):
+class _PicklerThatSortsDictItems(Pickler):
 
     dispatch = {}
-    dispatch.update(pickle.Pickler.dispatch)
+    dispatch.update(Pickler.dispatch)
 
     def save_dict(self, object):
         d = id(object)
@@ -89,8 +94,11 @@ def toxml(p, index=0):
     If the string contains multiple pickles:
 
     >>> l = [1]
-    >>> import StringIO
-    >>> f = StringIO.StringIO()
+    >>> try:
+    ...     from StringIO import StringIO
+    ... except ImportError:
+    ...     from io import BytesIO as StringIO
+    >>> f = StringIO()
     >>> pickler = pickle.Pickler(f)
     >>> pickler.dump(l)
     >>> pickler.dump(42)

@@ -21,8 +21,8 @@ import base64
 import marshal
 import re
 import struct
+import sys
 
-from pickle import Unpickler
 from pickle import \
      PERSID, NONE, INT, BININT, BININT1, BININT2, LONG, FLOAT, \
      BINFLOAT, STRING, BINSTRING, SHORT_BINSTRING, UNICODE, \
@@ -42,7 +42,16 @@ else:
     FALSE = NEWFALSE
     _bool_support = True
 
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+    text_type = unicode
+    text_chr = unichr
+    from pickle import Unpickler
+except ImportError:
+    from io import BytesIO as StringIO
+    text_type = str
+    text_chr = chr
+    from pickle import _Unpickler as Unpickler
 
 mdumps = marshal.dumps
 mloads = marshal.loads
