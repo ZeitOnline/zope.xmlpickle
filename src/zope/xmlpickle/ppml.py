@@ -479,6 +479,10 @@ class Initialized_Object(Sequence):
         return Sequence.output(self, write, indent)
 
 
+def _dispatch(typ):
+    return typ if sys.version_info < (3,) else typ[0]
+
+
 class ToXMLUnpickler(Unpickler):
 
     def __init__(self, *args):
@@ -499,20 +503,20 @@ class ToXMLUnpickler(Unpickler):
     def load_persid(self):
         pid = self.readline()[:-1]
         self.append(self.persistent_load(String(pid)))
-    dispatch[PERSID] = load_persid
+    dispatch[_dispatch(PERSID)] = load_persid
 
     def load_none(self):
         self.append(none)
-    dispatch[NONE] = load_none
+    dispatch[_dispatch(NONE)] = load_none
 
     if _bool_support:
         def load_false(self):
             self.append(false)
-        dispatch[NEWFALSE] = load_false
+        dispatch[_dispatch(NEWFALSE)] = load_false
 
         def load_true(self):
             self.append(true)
-        dispatch[NEWTRUE] = load_true
+        dispatch[_dispatch(NEWTRUE)] = load_true
 
     def load_int(self):
         s = self.readline()[:-1]
@@ -525,79 +529,79 @@ class ToXMLUnpickler(Unpickler):
                 self.append(false)
                 return
         self.append(Int(i))
-    dispatch[INT] = load_int
+    dispatch[_dispatch(INT)] = load_int
 
     def load_binint(self):
         self.append(Int(mloads('i' + self.read(4))))
-    dispatch[BININT] = load_binint
+    dispatch[_dispatch(BININT)] = load_binint
 
     def load_binint1(self):
         self.append(Int(mloads('i' + self.read(1) + '\000\000\000')))
-    dispatch[BININT1] = load_binint1
+    dispatch[_dispatch(BININT1)] = load_binint1
 
     def load_binint2(self):
         self.append(Int(mloads('i' + self.read(2) + '\000\000')))
-    dispatch[BININT2] = load_binint2
+    dispatch[_dispatch(BININT2)] = load_binint2
 
     def load_long(self):
         self.append(Long(long(self.readline()[:-1], 0)))
-    dispatch[LONG] = load_long
+    dispatch[_dispatch(LONG)] = load_long
 
     def load_float(self):
         self.append(Float(float(self.readline()[:-1])))
-    dispatch[FLOAT] = load_float
+    dispatch[_dispatch(FLOAT)] = load_float
 
     def load_binfloat(self, unpack=struct.unpack):
         self.append(Float(unpack('>d', self.read(8))[0]))
-    dispatch[BINFLOAT] = load_binfloat
+    dispatch[_dispatch(BINFLOAT)] = load_binfloat
 
     def load_string(self):
         self.append(String(eval(self.readline()[:-1],
                                 {'__builtins__': {}}))) # Let's be careful
-    dispatch[STRING] = load_string
+    dispatch[_dispatch(STRING)] = load_string
 
     def load_binstring(self):
         len = mloads('i' + self.read(4))
         self.append(String(self.read(len)))
-    dispatch[BINSTRING] = load_binstring
+    dispatch[_dispatch(BINSTRING)] = load_binstring
 
     def load_short_binstring(self):
         len = mloads('i' + self.read(1) + '\000\000\000')
         self.append(String(self.read(len)))
-    dispatch[SHORT_BINSTRING] = load_short_binstring
+    dispatch[_dispatch(SHORT_BINSTRING)] = load_short_binstring
 
     def load_unicode(self):
         self.append(Unicode(
             unicode(self.readline()[:-1],'raw-unicode-escape')
             ))
-    dispatch[UNICODE] = load_unicode
+    dispatch[_dispatch(UNICODE)] = load_unicode
 
     def load_binunicode(self):
         len = mloads('i' + self.read(4))
         self.append(Unicode(unicode(self.read(len),'utf-8')))
-    dispatch[BINUNICODE] = load_binunicode
+    dispatch[_dispatch(BINUNICODE)] = load_binunicode
 
     def load_tuple(self):
         k = self.marker()
         self.stack[k:] = [Tuple(self.stack[k+1:])]
-    dispatch[TUPLE] = load_tuple
+    dispatch[_dispatch(TUPLE)] = load_tuple
 
     def load_empty_tuple(self):
         self.stack.append(Tuple())
-    dispatch[EMPTY_TUPLE] = load_empty_tuple
+    dispatch[_dispatch(EMPTY_TUPLE)] = load_empty_tuple
 
     def load_empty_list(self):
         self.stack.append(List())
-    dispatch[EMPTY_LIST] = load_empty_list
+    dispatch[_dispatch(EMPTY_LIST)] = load_empty_list
 
     def load_empty_dictionary(self):
         self.stack.append(Dictionary())
-    dispatch[EMPTY_DICT] = load_empty_dictionary
+    dispatch[_dispatch(EMPTY_DICT)] = load_empty_dictionary
 
     def load_list(self):
         k = self.marker()
         self.stack[k:] = [List(self.stack[k+1:])]
-    dispatch[LIST] = load_list
+    dispatch[_dispatch(LIST)] = load_list
 
     def load_dict(self):
         k = self.marker()
@@ -608,7 +612,7 @@ class ToXMLUnpickler(Unpickler):
             value = items[i+1]
             d[key] = value
         self.stack[k:] = [d]
-    dispatch[DICT] = load_dict
+    dispatch[_dispatch(DICT)] = load_dict
 
     def load_inst(self):
         k = self.marker()
@@ -618,7 +622,7 @@ class ToXMLUnpickler(Unpickler):
         name = self.readline()[:-1]
         value = Initialized_Object(Global(module, name), args)
         self.append(value)
-    dispatch[INST] = load_inst
+    dispatch[_dispatch(INST)] = load_inst
 
     def load_obj(self):
         stack = self.stack
@@ -629,13 +633,13 @@ class ToXMLUnpickler(Unpickler):
         del stack[k:]
         value = Initialized_Object(klass,args)
         self.append(value)
-    dispatch[OBJ] = load_obj
+    dispatch[_dispatch(OBJ)] = load_obj
 
     def load_global(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         self.append(Global(module, name))
-    dispatch[GLOBAL] = load_global
+    dispatch[_dispatch(GLOBAL)] = load_global
 
     def load_reduce(self):
         stack = self.stack
@@ -646,7 +650,7 @@ class ToXMLUnpickler(Unpickler):
 
         value = Initialized_Object(callable, arg_tup)
         self.append(value)
-    dispatch[REDUCE] = load_reduce
+    dispatch[_dispatch(REDUCE)] = load_reduce
 
     idprefix = 'o'
 
@@ -685,32 +689,32 @@ class ToXMLUnpickler(Unpickler):
     def load_get(self):
         i = self.readline()[:-1]
         self.__get(i)
-    dispatch[GET] = load_get
+    dispatch[_dispatch(GET)] = load_get
 
     def load_binget(self):
         i = mloads('i' + self.read(1) + '\000\000\000')
         self.__get(`i`)
-    dispatch[BINGET] = load_binget
+    dispatch[_dispatch(BINGET)] = load_binget
 
     def load_long_binget(self):
         i = mloads('i' + self.read(4))
         self.__get(`i`)
-    dispatch[LONG_BINGET] = load_long_binget
+    dispatch[_dispatch(LONG_BINGET)] = load_long_binget
 
     def load_put(self):
         i = self.readline()[:-1]
         self.__put(i)
-    dispatch[PUT] = load_put
+    dispatch[_dispatch(PUT)] = load_put
 
     def load_binput(self):
         i = mloads('i' + self.read(1) + '\000\000\000')
         self.__put(`i`)
-    dispatch[BINPUT] = load_binput
+    dispatch[_dispatch(BINPUT)] = load_binput
 
     def load_long_binput(self):
         i = mloads('i' + self.read(4))
         self.__put(`i`)
-    dispatch[LONG_BINPUT] = load_long_binput
+    dispatch[_dispatch(LONG_BINPUT)] = load_long_binput
 
 
 def ToXMLload(file):
