@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+4.0.0 (unreleased)
+------------------
+
+- Make compatible with Python-3, drop compatibility to <2.7
+
+
 3.4.0 (2007-11-03)
 ------------------
 

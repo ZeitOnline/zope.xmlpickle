@@ -29,7 +29,7 @@ TESTS_REQUIRE = [
 
 setup(
     name='zope.xmlpickle',
-    version='3.5.0.dev0',
+    version='4.0.0.dev0',
     url='https://github.com/zopefoundation/zope.xmlpickle',
     license='ZPL 2.1',
     description='XML-based Pickling',
@@ -48,6 +48,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Topic :: Internet :: WWW/HTTP'
