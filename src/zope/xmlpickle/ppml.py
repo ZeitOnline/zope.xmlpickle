@@ -582,8 +582,12 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(BINUNICODE)] = load_binunicode
 
     def load_tuple(self):
-        k = self.marker()
-        self.stack[k:] = [Tuple(self.stack[k+1:])]
+        if sys.version_info < (3,):
+            k = self.marker()
+            self.stack[k:] = [Tuple(self.stack[k+1:])]
+        else:
+            items = self.pop_mark()
+            self.append(Tuple(items))
     dispatch[_dispatch(TUPLE)] = load_tuple
 
     def load_empty_tuple(self):
@@ -599,25 +603,38 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(EMPTY_DICT)] = load_empty_dictionary
 
     def load_list(self):
-        k = self.marker()
-        self.stack[k:] = [List(self.stack[k+1:])]
+        if sys.version_info < (3,):
+            k = self.marker()
+            self.stack[k:] = [List(self.stack[k+1:])]
+        else:
+            items = self.pop_mark()
+            self.append(List(items))
     dispatch[_dispatch(LIST)] = load_list
 
     def load_dict(self):
-        k = self.marker()
+        if sys.version_info < (3,):
+            k = self.marker()
+            items = self.stack[k+1:]
+        else:
+            items = self.pop_mark()
         d = Dictionary()
-        items = self.stack[k+1:]
         for i in range(0, len(items), 2):
             key = items[i]
             value = items[i+1]
             d[key] = value
-        self.stack[k:] = [d]
+        if sys.version_info < (3,):
+            self.stack[k:] = [d]
+        else:
+            self.append(d)
     dispatch[_dispatch(DICT)] = load_dict
 
     def load_inst(self):
-        k = self.marker()
-        args = Tuple(self.stack[k+1:])
-        del self.stack[k:]
+        if sys.version_info < (3,):
+            k = self.marker()
+            args = Tuple(self.stack[k+1:])
+            del self.stack[k:]
+        else:
+            args = self.pop_mark()
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         value = Initialized_Object(Global(module, name), args)
@@ -625,12 +642,16 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(INST)] = load_inst
 
     def load_obj(self):
-        stack = self.stack
-        k = self.marker()
-        klass = stack[k + 1]
-        del stack[k + 1]
-        args = Tuple(stack[k + 1:])
-        del stack[k:]
+        if sys.version_info < (3,):
+            stack = self.stack
+            k = self.marker()
+            klass = stack[k + 1]
+            del stack[k + 1]
+            args = Tuple(stack[k + 1:])
+            del stack[k:]
+        else:
+            args = self.pop_mark()
+            klass = args.pop(0)
         value = Initialized_Object(klass,args)
         self.append(value)
     dispatch[_dispatch(OBJ)] = load_obj
