@@ -2,8 +2,8 @@
 CHANGES
 =======
 
-4.0.0 (unreleased)
-------------------
+4.0.0+py3k1 (2019-05-14)
+------------------------
 
 - Make compatible with Python-3, drop compatibility to <2.7
 
