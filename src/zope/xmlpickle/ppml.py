@@ -182,7 +182,7 @@ class Long(Scalar):
 class Float(Scalar):
 
     def value(self):
-        return `self._v`
+        return repr(self._v)
 
 
 _binary_char = re.compile("[^\n\t\r -\x7e]").search
@@ -665,7 +665,7 @@ class ToXMLUnpickler(Unpickler):
                 # We don't want this memoized
                 get_id = None
             else:
-                get_id = `self.__got`
+                get_id = repr(self.__got)
                 self.__got += 1
                 ob.id = self.idprefix+get_id
 
@@ -693,12 +693,12 @@ class ToXMLUnpickler(Unpickler):
 
     def load_binget(self):
         i = mloads('i' + self.read(1) + '\000\000\000')
-        self.__get(`i`)
+        self.__get(repr(i))
     dispatch[_dispatch(BINGET)] = load_binget
 
     def load_long_binget(self):
         i = mloads('i' + self.read(4))
-        self.__get(`i`)
+        self.__get(repr(i))
     dispatch[_dispatch(LONG_BINGET)] = load_long_binget
 
     def load_put(self):
@@ -708,12 +708,12 @@ class ToXMLUnpickler(Unpickler):
 
     def load_binput(self):
         i = mloads('i' + self.read(1) + '\000\000\000')
-        self.__put(`i`)
+        self.__put(repr(i))
     dispatch[_dispatch(BINPUT)] = load_binput
 
     def load_long_binput(self):
         i = mloads('i' + self.read(4))
-        self.__put(`i`)
+        self.__put(repr(i))
     dispatch[_dispatch(LONG_BINPUT)] = load_long_binput
 
 
@@ -872,7 +872,7 @@ class xmlPickler(object):
                 v = BINSTRING, s, v
 
         else:
-            v = STRING, `v`, "\n"
+            v = STRING, repr(v), b"\n"
 
         return self.put(v, attrs)
 
