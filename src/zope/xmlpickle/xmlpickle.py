@@ -59,8 +59,8 @@ class _PicklerThatSortsDictItems(Pickler):
         if using_setitems:
             write(_MARK)
 
-        items = object.items()
-        items.sort()
+        # Python-2 allowed comparing different types, so we emulate that.
+        items = sorted(object.items(), key=lambda x: repr(x))
         for key, value in items:
             save(key)
             save(value)

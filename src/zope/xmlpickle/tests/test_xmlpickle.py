@@ -282,9 +282,8 @@ class newWInitial(WInitial, object):
 
 class DictSub(dict):
     def __eq__(self, other):
-        items = self.items()
-        items.sort()
-        otems = other.items()
+        items = sorted(self.items(), key=lambda x: repr(x))
+        otems = sorted(other.items(), key=lambda x: repr(x))
         otems.sort()
         return (items, self.__dict__) == (otems, other.__dict__)
 
