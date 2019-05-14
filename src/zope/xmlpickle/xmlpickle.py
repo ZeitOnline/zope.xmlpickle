@@ -87,7 +87,7 @@ def toxml(p, index=0):
 
     >>> import pickle
     >>> s = pickle.dumps(42)
-    >>> print toxml(s).strip()
+    >>> print(toxml(s).strip().decode('utf-8'))
     <?xml version="1.0" encoding="utf-8" ?>
     <pickle> <int>42</int> </pickle>
 
@@ -107,7 +107,7 @@ def toxml(p, index=0):
 
     You can supply indexes to access individual pickles:
 
-    >>> print toxml(s).strip()
+    >>> print(toxml(s).strip().decode('utf-8'))
     <?xml version="1.0" encoding="utf-8" ?>
     <pickle>
       <list>
@@ -115,7 +115,7 @@ def toxml(p, index=0):
       </list>
     </pickle>
 
-    >>> print toxml(s, 0).strip()
+    >>> print(toxml(s, 0).strip().decode('utf-8'))
     <?xml version="1.0" encoding="utf-8" ?>
     <pickle>
       <list>
@@ -123,11 +123,11 @@ def toxml(p, index=0):
       </list>
     </pickle>
 
-    >>> print toxml(s, 1).strip()
+    >>> print(toxml(s, 1).strip().decode('utf-8'))
     <?xml version="1.0" encoding="utf-8" ?>
     <pickle> <int>42</int> </pickle>
 
-    >>> print toxml(s, 2).strip()
+    >>> print(toxml(s, 2).strip().decode('utf-8'))
     <?xml version="1.0" encoding="utf-8" ?>
     <pickle>
       <list>
@@ -146,9 +146,9 @@ def toxml(p, index=0):
         xmlob = u.load()
         index -= 1
     xmlob = u.load()
-    r = ['<?xml version="1.0" encoding="utf-8" ?>\n']
+    r = [b'<?xml version="1.0" encoding="utf-8" ?>\n']
     xmlob.output(r.append)
-    return ''.join(r)
+    return b''.join(r)
 
 
 def dumps(ob):
@@ -168,7 +168,6 @@ def fromxml(xml):
     parser.EndElementHandler = handler.handle_endtag
     parser.Parse(xml)
     pickle = handler.get_value()
-    pickle = str(pickle)
     return pickle
 
 

@@ -17,15 +17,22 @@
 import doctest
 import pickle
 import unittest
+import sys
 from zope.xmlpickle import dumps, loads
 
 
 class Test(unittest.TestCase):
 
+    maxDiff = None
+
     def __test(self, v, expected_xml=None):
         xml = dumps(v)
         if expected_xml:
-            self.assertEqual(xml, expected_xml)
+            if sys.version_info >= (3,):
+                actual_xml = xml.decode('utf-8')
+            else:
+                actual_xml = xml
+            self.assertEqual(actual_xml, expected_xml)
         newv = loads(xml)
         self.assertEqual(newv, v)
 
@@ -81,12 +88,13 @@ class Test(unittest.TestCase):
                   0, 1, 99, 100, 3000, 30000, 70000, 2000000000):
             self.__test(v)
 
+    @unittest.skipIf(sys.version_info >= (3,), reason='No long in py3 anymore')
     def test_long(self):
-        for v in (-2000000000l, -70000l, -30000l, -3000l, -100l, -99l, -1l,
-                  0l, 1l, 99l, 100l, 3000l, 30000l, 70000l, 2000000000l):
-            self.__test(v)
+        for v in (-2000000000, -70000, -30000, -3000, -100, -99, -1,
+                  0, 1, 99, 100, 3000, 30000, 70000, 2000000000):
+            self.__test(long(v))
         for i in range(10, 3000, 200):
-            v = 30l**i
+            v = long(30)**i
             self.__test(v)
             self.__test(-v)
 
@@ -185,8 +193,9 @@ class Test(unittest.TestCase):
 </pickle>
 """
 
-        self.__test(Simple(1,2),
-                    expect % ('classic_', 'Simple', __name__, 'classic_'))
+        if sys.version_info < (3,):
+            self.__test(Simple(1,2),
+                        expect % ('classic_', 'Simple', __name__, 'classic_'))
         self.__test(newSimple(1,2),
                     expect % ('', 'newSimple', __name__, ''))
         self.__test(newSimple(1,2))

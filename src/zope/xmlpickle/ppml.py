@@ -64,27 +64,27 @@ def _convert_sub(string):
 
     # We don't want to get returns "normalized away, so we quote them
     # This means we can't use cdata.
-    rpos = string.find('\r')
+    rpos = string.find(b'\r')
 
-    lpos = string.find('<')
-    apos = string.find('&')
+    lpos = string.find(b'<')
+    apos = string.find(b'&')
 
     if rpos >= 0 or lpos >= 0 or apos >= 0:
 
         # Need to do something about special characters
-        if rpos < 0 and string.find(']]>') < 0:
+        if rpos < 0 and string.find(b']]>') < 0:
             # can use cdata
-            string = "<![CDATA[%s]]>" % string
+            string = b"<![CDATA[%s]]>" % string
         else:
 
             if apos >= 0:
-                string = string.replace("&", "&amp;")
+                string = string.replace(b"&", b"&amp;")
             if lpos >= 0:
-                string = string.replace("<", "&lt;")
+                string = string.replace(b"<", b"&lt;")
             if rpos >= 0:
-                string = string.replace("\r", "&#x0d;")
+                string = string.replace(b"\r", b"&#x0d;")
 
-    return '', string
+    return b'', string
 
 
 #  Function unconvert takes a encoding and a string and
@@ -100,7 +100,9 @@ def unconvert_string(encoding, string):
 
 def unconvert_unicode(encoding, string):
     if encoding == 'base64':
-        string = base64.decodestring(string.encode('ascii'))
+        if sys.version_info < (3,):
+            string = string.encode('ascii')
+        string = base64.decodestring(string)
     elif encoding:
         raise ValueError('bad encoding', encoding)
 
@@ -141,8 +143,8 @@ class Global(Base):
 
         name = self.__class__.__name__.lower()
         write(
-            '%s<%s%s name="%s" module="%s"/>\n' % (
-            ' '*indent, name, id, self.name, self.module)
+            ('%s<%s%s name="%s" module="%s"/>\n' % (
+             ' '*indent, name, id, self.name, self.module)).encode('utf-8')
             )
 
 _reconstructor_global = Global('copy_reg', '_reconstructor')
@@ -164,11 +166,11 @@ class Scalar(Base):
 
         name = self.__class__.__name__.lower()
         write(
-            '%s<%s%s>%s</%s>' % (
-            ' '*indent, name, id, self.value(), name)
+            ('%s<%s%s>%s</%s>' % (
+             ' '*indent, name, id, self.value(), name)).encode('utf-8')
             )
         if not strip:
-            write('\n')
+            write(b'\n')
 
 class Int(Scalar):
     pass
@@ -216,11 +218,11 @@ class String(Scalar):
 
         name = self.__class__.__name__.lower()
 
-        write('%s<%s%s%s>' % (' '*indent, name, id, encoding))
+        write(('%s<%s%s%s>' % (' '*indent, name, id, encoding)).encode('utf-8'))
         write(self.value())
-        write('</%s>' % name)
+        write(('</%s>' % name).encode('utf-8'))
         if not strip:
-            write('\n')
+            write(b'\n')
 
 
 # TODO: use of a regular expression here seems to be brittle
@@ -235,7 +237,7 @@ _invalid_xml_char = re.compile(
     u'\x0e-\x1f'
 
     # Hack to get around utf-8 encoding bug(?) for surogates.
-    + unichr(0xd800)+u'-'+unichr(0xdfff) + # u'\ud800-\udfff'
+    + text_chr(0xd800)+u'-'+text_chr(0xdfff) + # u'\ud800-\udfff'
 
     u'\ufffe\uffff'
     u']'
@@ -262,9 +264,9 @@ class Wrapper(Base):
         return self._v
 
     def output_nonscalar(self, write, name, id, v, str_indent, indent):
-        write('%s<%s%s>\n' % (str_indent, name, id))
+        write(('%s<%s%s>\n' % (str_indent, name, id)).encode('utf-8'))
         v.output(write, indent+2)
-        write('%s</%s>\n' % (str_indent, name))
+        write((('%s</%s>\n' % (str_indent, name)).encode('utf-8')))
 
     def output(self, write, indent=0):
         if self.id:
@@ -275,9 +277,9 @@ class Wrapper(Base):
         v = self._v
         str_indent = ' '*indent
         if isinstance(v, Scalar):
-            write('%s<%s%s> ' % (str_indent, name, id))
+            write(('%s<%s%s> ' % (str_indent, name, id)).encode('utf-8'))
             v.output(write, strip=1)
-            write(' </%s>\n' % name)
+            write((' </%s>\n' % name).encode('utf-8'))
         else:
             return self.output_nonscalar(
                 write, name, id, v, str_indent, indent)
@@ -286,9 +288,9 @@ class CloseWrapper(Wrapper):
 
     # TODO: This doesn't do what I want anymore because we can't strip v
     def _output_nonscalar(self, write, name, id, v, str_indent, indent):
-        write('%s<%s%s> ' % (str_indent, name, id))
+        write(('%s<%s%s> ' % (str_indent, name, id)).encode('utf-8'))
         v.output(write, indent+2)
-        write(' </%s>\n' % name)
+        write((' </%s>\n' % name).encode('utf-8'))
 
 class Collection(Base):
     def value(self, write, indent):
@@ -305,11 +307,11 @@ class Collection(Base):
         i=' '*indent
 
         if self:
-            write('%s<%s%s>\n' % (i, name, id))
+            write(('%s<%s%s>\n' % (i, name, id)).encode('utf-8'))
             self.value(write, indent+2)
-            write('%s</%s>\n' % (i, name))
+            write(('%s</%s>\n' % (i, name)).encode('utf-8'))
         else:
-            write('%s<%s%s />\n' % (i, name, id))
+            write(('%s<%s%s />\n' % (i, name, id)).encode('utf-8'))
 
 class Key(Wrapper):
     pass
@@ -337,18 +339,20 @@ class Dictionary(Collection):
     def value(self, write, indent):
         ind = ' '*indent
         ind4 = indent+4
-        begin = '%s<%s>\n' % (ind, self.item_name)
-        end = '%s</%s>\n' % (ind, self.item_name)
+        begin = ('%s<%s>\n' % (ind, self.item_name)).encode('utf-8')
+        end = ('%s</%s>\n' % (ind, self.item_name)).encode('utf-8')
         for key, value in self._d:
-            if (key.__class__ is String
+            if (key.__class__ in (String, Unicode)
                 and not key.encoding
-                and identifier(key.value())
+                and identifier(key.value().decode('utf-8'))
                 ):
                 id = getattr(key, 'id', '')
                 if id:
                     id = ' id="%s"' % id
-                write('%s<%s %s="%s"%s>\n' %
-                      (ind, self.item_name, self.key_name, key.value(), id))
+                write(('%s<%s %s="%s"%s>\n' %
+                       (ind, self.item_name, self.key_name,
+                        key.value().decode('utf-8'), id)
+                ).encode('utf-8'))
                 value.output(write, ind4)
                 write(end)
             else:
@@ -417,9 +421,9 @@ class NamedScalar(Scalar):
         self.name = name
 
     def output(self, write, indent=0, strip=0):
-        write("%s<%s/>" % (' '*indent, self.name))
+        write(("%s<%s/>" % (' '*indent, self.name)).encode('utf-8'))
         if not strip:
-            write('\n')
+            write(b'\n')
 
 none = NamedScalar("none")
 true = NamedScalar("true")
@@ -428,9 +432,9 @@ false = NamedScalar("false")
 class Reference(Scalar):
 
     def output(self, write, indent=0, strip=0):
-        write('%s<reference id="%s"/>' % (' '*indent,self._v))
+        write(('%s<reference id="%s"/>' % (' '*indent,self._v)).encode('utf-8'))
         if not strip:
-            write('\n')
+            write(b'\n')
 
 Get=Reference # Get is pickle name, but Reference is nicer name
 
@@ -532,15 +536,15 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(INT)] = load_int
 
     def load_binint(self):
-        self.append(Int(mloads('i' + self.read(4))))
+        self.append(Int(mloads(b'i' + self.read(4))))
     dispatch[_dispatch(BININT)] = load_binint
 
     def load_binint1(self):
-        self.append(Int(mloads('i' + self.read(1) + '\000\000\000')))
+        self.append(Int(mloads(b'i' + self.read(1) + b'\000\000\000')))
     dispatch[_dispatch(BININT1)] = load_binint1
 
     def load_binint2(self):
-        self.append(Int(mloads('i' + self.read(2) + '\000\000')))
+        self.append(Int(mloads(b'i' + self.read(2) + b'\000\000')))
     dispatch[_dispatch(BININT2)] = load_binint2
 
     def load_long(self):
@@ -566,19 +570,19 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(BINSTRING)] = load_binstring
 
     def load_short_binstring(self):
-        len = mloads('i' + self.read(1) + '\000\000\000')
+        len = mloads(b'i' + self.read(1) + b'\000\000\000')
         self.append(String(self.read(len)))
     dispatch[_dispatch(SHORT_BINSTRING)] = load_short_binstring
 
     def load_unicode(self):
         self.append(Unicode(
-            unicode(self.readline()[:-1],'raw-unicode-escape')
+            text_type(self.readline()[:-1],'raw-unicode-escape')
             ))
     dispatch[_dispatch(UNICODE)] = load_unicode
 
     def load_binunicode(self):
-        len = mloads('i' + self.read(4))
-        self.append(Unicode(unicode(self.read(len),'utf-8')))
+        len = mloads(b'i' + self.read(4))
+        self.append(Unicode(text_type(self.read(len),'utf-8')))
     dispatch[_dispatch(BINUNICODE)] = load_binunicode
 
     def load_tuple(self):
@@ -637,6 +641,9 @@ class ToXMLUnpickler(Unpickler):
             args = self.pop_mark()
         module = self.readline()[:-1]
         name = self.readline()[:-1]
+        if sys.version_info >= (3,):
+            module = module.decode('ascii')
+            name = name.decode('ascii')
         value = Initialized_Object(Global(module, name), args)
         self.append(value)
     dispatch[_dispatch(INST)] = load_inst
@@ -659,6 +666,9 @@ class ToXMLUnpickler(Unpickler):
     def load_global(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
+        if sys.version_info >= (3,):
+            module = module.decode('ascii')
+            name = name.decode('ascii')
         self.append(Global(module, name))
     dispatch[_dispatch(GLOBAL)] = load_global
 
@@ -713,7 +723,7 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(GET)] = load_get
 
     def load_binget(self):
-        i = mloads('i' + self.read(1) + '\000\000\000')
+        i = mloads(b'i' + self.read(1) + b'\000\000\000')
         self.__get(repr(i))
     dispatch[_dispatch(BINGET)] = load_binget
 
@@ -728,12 +738,12 @@ class ToXMLUnpickler(Unpickler):
     dispatch[_dispatch(PUT)] = load_put
 
     def load_binput(self):
-        i = mloads('i' + self.read(1) + '\000\000\000')
+        i = mloads(b'i' + self.read(1) + b'\000\000\000')
         self.__put(repr(i))
     dispatch[_dispatch(BINPUT)] = load_binput
 
     def load_long_binput(self):
-        i = mloads('i' + self.read(4))
+        i = mloads(b'i' + self.read(4))
         self.__put(repr(i))
     dispatch[_dispatch(LONG_BINPUT)] = load_long_binput
 
@@ -764,7 +774,6 @@ class xmlPickler(object):
         return top
 
     def handle_starttag(self, tag, attrs):
-
         # Convert attrs to dict, if necessary
         if type(attrs) is list:
             x=0
@@ -800,9 +809,9 @@ class xmlPickler(object):
 
     def get_value(self):
         for s in self._stack[0][0]:
-            if type(s) is unicode:
-                print self._stack[0][0]
-        return ''.join(self._stack[0][0])
+            if type(s) is text_type:
+                print(self._stack[0][0])
+        return b''.join(self._stack[0][0])
 
 
     def pickle(self, tag, data, STOP_tuple = (STOP, )):
@@ -824,7 +833,7 @@ class xmlPickler(object):
         return FALSE,
 
     def long(self, tag, data):
-        return ((LONG + ''.join(data[2:]).strip().encode('ascii') + 'L\n'), )
+        return ((LONG + b''.join(data[2:]).strip().encode('ascii') + b'L\n'), )
 
     def save_wrapper(self, tag, data):
         return data[2]
@@ -872,7 +881,7 @@ class xmlPickler(object):
                     return (BININT, i)
 
         # Text pickle, or int too big to fit in signed 4-byte format.
-        return (INT, object, '\n')
+        return (INT, object, b'\n')
 
     def float(self, tag, data):
         v = ''.join(data[2:]).strip().encode('ascii')
@@ -880,7 +889,7 @@ class xmlPickler(object):
         if self.binary:
             return BINFLOAT, struct.pack('>d',float(v))
         else:
-            return FLOAT,  v, '\n'
+            return FLOAT,  v, b'\n'
 
     def _string(self, v, attrs):
 
@@ -888,7 +897,10 @@ class xmlPickler(object):
             l = len(v)
             s = mdumps(l)[1:]
             if (l<256):
-                v = SHORT_BINSTRING, s[0], v
+                s = s[0]
+                if sys.version_info >= (3,):
+                    s = chr(s).encode('ascii')
+                v = SHORT_BINSTRING, s, v
             else:
                 v = BINSTRING, s, v
 
@@ -920,10 +932,10 @@ class xmlPickler(object):
             s = mdumps(l)[1:]
             v = (BINUNICODE, s, v)
         else:
-            v = unicode(v, 'utf-8')
+            v = text_type(v, 'utf-8')
             v = v.replace("\\", "\\u005c")
             v = v.replace("\n", "\\u000a")
-            v = (UNICODE, v.encode('raw-unicode-escape'), '\n')
+            v = (UNICODE, v.encode('raw-unicode-escape'), b'\n')
 
         return self.put(v, attrs)
 
@@ -970,10 +982,10 @@ class xmlPickler(object):
         id = attrs.get('id', '').encode('ascii')
 
         if id:
-            prefix = id.rfind('.')
+            prefix = id.rfind(b'.')
             if prefix >= 0:
                 id=id[prefix+1:]
-            elif id[0] in 'io':
+            elif id[0] in b'io':
                 id=id[1:]
 
             if self.binary:
@@ -981,13 +993,15 @@ class xmlPickler(object):
                 s=mdumps(id)[1:]
                 if (id < 256):
                     id=s[0]
+                    if sys.version_info >= (3,):
+                        id = chr(id).encode('ascii')
                     put = BINPUT
                 else:
                     id=s
                     put= LONG_BINPUT
                 id=put+id
             else:
-                id=PUT+id+"\012"
+                id=PUT+id+b"\012"
 
             if type(v) is list:
                 v.append(id)
@@ -1022,10 +1036,10 @@ class xmlPickler(object):
         attrs = data[1]
         id = attrs['id'].encode('ascii')
 
-        prefix = id.rfind('.')
+        prefix = id.rfind(b'.')
         if prefix >= 0:
             id = id[prefix+1:]
-        elif id[0] in 'oi':
+        elif id[0] in b'oi':
             id = id[1:]
 
         get = GET
@@ -1035,13 +1049,15 @@ class xmlPickler(object):
             s=mdumps(id)[1:]
             if (id < 256):
                 id=s[0]
+                if sys.version_info >= (3,):
+                    id = chr(id).encode('ascii')
                 get = BINGET
             else:
                 id = s
                 get = LONG_BINGET
             v=get+id
         else:
-            v=get+id+'\n'
+            v=get+id+b'\n'
 
         return (v, )
 
@@ -1065,9 +1081,9 @@ class xmlPickler(object):
         return v
 
     def object(self, tag, data):
-        v = ['(ccopy_reg\n_reconstructor\n']
+        v = [b'(ccopy_reg\n_reconstructor\n']
         v.extend(data[2])
-        v.append('c__builtin__\nobject\nN')
+        v.append(b'c__builtin__\nobject\nN')
         v.append(OBJ)
 
         v = self.put(v, data[1])
@@ -1092,7 +1108,7 @@ class xmlPickler(object):
         module = attrs['module'].encode('ascii')
         name = attrs['name'].encode('ascii')
 
-        return self.put((GLOBAL, module, '\n', name, '\n'), attrs)
+        return self.put((GLOBAL, module, b'\n', name, b'\n'), attrs)
 
     def item(self, tag, data, key_name = 'key'):
         attrs = data[1]
