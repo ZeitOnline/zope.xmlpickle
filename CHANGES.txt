@@ -5,7 +5,7 @@ CHANGES
 4.0.0+py3k2 (unreleased)
 ------------------------
 
-- Nothing changed yet.
+- Replace pkg_resources with pep420 namespace package
 
 
 4.0.0+py3k1 (2019-05-14)

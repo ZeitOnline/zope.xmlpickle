@@ -15,12 +15,11 @@
 
 """
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
-
 
 TESTS_REQUIRE = [
     'zope.testrunner',
@@ -52,12 +51,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Topic :: Internet :: WWW/HTTP'
-    ],
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    namespace_packages=['zope'],
-    install_requires=[
-        'setuptools',
     ],
     extras_require={
         'test': TESTS_REQUIRE,
