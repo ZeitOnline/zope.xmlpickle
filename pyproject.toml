@@ -1,7 +1,7 @@
 [project]
 name = "zope.xmlpickle"
 description = "XML-based Pickling"
-version = "4.0.0+py3k2.dev0"
+version = "4.0.0+py3k2"
 
 authors = [{name="Zope Corporation and Contributors", email="zope-dev@zope.org"}]
 license = {text="ZPL 2.1"}
