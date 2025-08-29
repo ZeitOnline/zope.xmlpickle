@@ -119,6 +119,7 @@ class Test(unittest.TestCase):
         v.name = 'v'
         self.__test(v)
 
+    @unittest.skipIf(sys.version_info >= (3,), reason='No string in py3 anymore')
     def test_string(self):
         self.__test('hello\n\tworld',
                     '<?xml version="1.0" encoding="utf-8" ?>\n'
