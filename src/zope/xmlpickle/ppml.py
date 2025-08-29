@@ -43,11 +43,15 @@ else:
     _bool_support = True
 
 try:
+    from base64 import encodestring as encode_b64
+    from base64 import decodestring as decode_b64
     from cStringIO import StringIO
     text_type = unicode
     text_chr = unichr
     from pickle import Unpickler
 except ImportError:
+    from base64 import encodebytes as encode_b64
+    from base64 import decodebytes as decode_b64
     from io import BytesIO as StringIO
     text_type = str
     text_chr = chr
@@ -92,7 +96,7 @@ def _convert_sub(string):
 
 def unconvert_string(encoding, string):
     if encoding == 'base64':
-        return base64.decodestring(string)
+        return decode_b64(string)
     elif encoding:
         raise ValueError('bad encoding', encoding)
 
@@ -102,7 +106,7 @@ def unconvert_unicode(encoding, string):
     if encoding == 'base64':
         if sys.version_info < (3,):
             string = string.encode('ascii')
-        string = base64.decodestring(string)
+        string = decode_b64(string)
     elif encoding:
         raise ValueError('bad encoding', encoding)
 
@@ -199,7 +203,7 @@ class String(Scalar):
     def convert(self, string):
         """Convert a string to a form that can be included in XML text"""
         if _binary_char(string):
-            string = base64.encodestring(string)[:-1]
+            string = encode_b64(string)[:-1]
             return 'base64', string
 
         return _convert_sub(string)
@@ -249,7 +253,7 @@ class Unicode(String):
 
         if _invalid_xml_char(string):
             string = string.encode('utf-8')
-            string = base64.encodestring(string)[:-1]
+            string = encode_b64(string)[:-1]
             return 'base64', string
 
         return _convert_sub(string.encode('utf-8'))
