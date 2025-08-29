@@ -1,0 +1,23 @@
+[project]
+name = "zope.xmlpickle"
+description = "XML-based Pickling"
+version = "4.0.0+py3k2.dev0"
+
+authors = [{name="Zope Corporation and Contributors", email="zope-dev@zope.org"}]
+license = {text="ZPL 2.1"}
+urls = {repository="https://github.com/zopefoundation/zope.xmlpickle"}
+requires-python = ">=3.7"
+
+[project.optional-dependencies]
+test = [
+    "zope.testrunner",
+]
+
+
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "zope"
+namespace = true
