@@ -302,6 +302,6 @@ class DictSub(dict):
 
 def test_suite():
     return unittest.TestSuite((
-        unittest.makeSuite(Test),
+        unittest.TestLoader().loadTestsFromTestCase(Test),
         doctest.DocTestSuite('zope.xmlpickle.xmlpickle'),
         ))
